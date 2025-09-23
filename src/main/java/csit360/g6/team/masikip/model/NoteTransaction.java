@@ -89,11 +89,3 @@ public class NoteTransaction {
 }
 
 
-enum ActionType {
-    CREATE_NOTE,
-    UPDATE_NOTE,
-    DELETE_NOTE,
-    SET_PRIORITY,
-    STYLE_NOTE,
-    AUTO_SAVE
-}
