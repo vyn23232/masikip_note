@@ -25,7 +25,6 @@ public class Note {
 
     private LocalDateTime updatedAt;
 
-    // --- Getters and Setters ---
 
     public Long getNoteId() {
         return noteId;

@@ -29,7 +29,6 @@ public class NoteTransaction {
 
     private String metadata; // Optional field for other data (e.g., priority change, style)
 
-    // --- Getters and Setters ---
 
     public Long getTransactionId() {
         return transactionId;
