@@ -1,6 +1,4 @@
-// NoteTransaction.java
-
-package com.example.notesapp.model;
+package csit360.g6.team.masikip.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -11,23 +9,23 @@ public class NoteTransaction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long transactionId; // Unique ID for this transaction
+    private Long transactionId;
 
     @Column(nullable = false)
-    private Long noteId; // The ID of the note this transaction belongs to
+    private Long noteId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ActionType actionType; // e.g., CREATE_NOTE, UPDATE_NOTE
+    private ActionType actionType; // CREATE_NOTE, UPDATE_NOTE
 
     @Column(columnDefinition = "TEXT")
-    private String contentBefore; // The state of the content *before* this transaction
+    private String contentBefore;
 
     @Column(columnDefinition = "TEXT")
-    private String contentAfter; // The state of the content *after* this transaction
+    private String contentAfter;
 
     @Column(nullable = false)
-    private LocalDateTime timestamp; // When the transaction occurred
+    private LocalDateTime timestamp;
 
     private String metadata; // Optional field for other data (e.g., priority change, style)
 
@@ -90,7 +88,7 @@ public class NoteTransaction {
     }
 }
 
-// We also need an Enum to define the types of actions
+
 enum ActionType {
     CREATE_NOTE,
     UPDATE_NOTE,

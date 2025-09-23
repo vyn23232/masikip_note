@@ -1,6 +1,4 @@
-// Note.java
-
-package com.example.notesapp.model;
+package csit360.g6.team.masikip.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -11,7 +9,7 @@ public class Note {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long noteId; // Unique ID for the note
+    private Long noteId;
 
     @Column(nullable = false)
     private String title;
@@ -21,7 +19,7 @@ public class Note {
 
     private String priority; // e.g., "High", "Medium", "Low"
 
-    private boolean isActive; // Used for soft deletes
+    private boolean isActive; // FOR SOFT DELETES
 
     private LocalDateTime createdAt;
 
