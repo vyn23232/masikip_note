@@ -2,6 +2,7 @@
 package csit360.g6.team.masikip.controller;
 
 import csit360.g6.team.masikip.dto.CreateNoteRequest;
+import csit360.g6.team.masikip.dto.UpdateNotePriorityRequest;
 import csit360.g6.team.masikip.dto.UpdateNoteRequest;
 import csit360.g6.team.masikip.model.Note;
 import csit360.g6.team.masikip.service.NoteService;
@@ -41,5 +42,11 @@ public class NoteController {
     public ResponseEntity<Void> deleteNote(@PathVariable Long id) {
         noteService.deleteNote(id);
         return ResponseEntity.noContent().build(); // Standard successful response for a DELETE request
+    }
+
+    @PatchMapping("/{id}/priority")
+    public ResponseEntity<Note> updateNotePriority(@PathVariable Long id, @RequestBody UpdateNotePriorityRequest request) {
+        Note updatedNote = noteService.updateNotePriority(id, request.isPinned());
+        return ResponseEntity.ok(updatedNote);
     }
 }

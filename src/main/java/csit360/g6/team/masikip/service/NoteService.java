@@ -103,4 +103,28 @@ public class NoteService {
         transaction.setMetadata("Note marked as deleted.");
         noteTransactionRepository.save(transaction);
     }
+
+    @Transactional
+    public Note updateNotePriority(Long noteId, boolean isPinned) {
+        Note noteToUpdate = noteRepository.findById(noteId)
+                .orElseThrow(() -> new EntityNotFoundException("Note not found with id: " + noteId));
+
+        String oldPriority = noteToUpdate.getPriority();
+        String newPriority = isPinned ? "High" : "Medium";
+
+        noteToUpdate.setPriority(newPriority);
+        noteToUpdate.setUpdatedAt(LocalDateTime.now());
+
+        Note updatedNote = noteRepository.save(noteToUpdate);
+
+        NoteTransaction transaction = new NoteTransaction();
+        transaction.setNoteId(noteId);
+        transaction.setActionType(ActionType.SET_PRIORITY);
+        transaction.setTimestamp(LocalDateTime.now());
+        transaction.setMetadata("Priority changed from '" + oldPriority + "' to '" + newPriority + "'");
+
+        noteTransactionRepository.save(transaction);
+
+        return updatedNote;
+    }
 }
