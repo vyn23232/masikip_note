@@ -6,6 +6,7 @@ import csit360.g6.team.masikip.model.Note;
 import csit360.g6.team.masikip.model.NoteTransaction;
 import csit360.g6.team.masikip.repository.NoteRepository;
 import csit360.g6.team.masikip.repository.NoteTransactionRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +31,6 @@ public class NoteService {
 
     @Transactional
     public Note createNote(String title, String content) {
-        // Step 1: Create and save the new Note entity.
         Note newNote = new Note();
         newNote.setTitle(title);
         newNote.setContent(content);
@@ -39,10 +39,8 @@ public class NoteService {
         newNote.setActive(true);
         newNote.setPriority("Medium");
 
-        // We save the note first to get its generated ID from the database.
         Note savedNote = noteRepository.save(newNote);
 
-        // Step 2: Create and save the corresponding "CREATE_NOTE" transaction.
         NoteTransaction transaction = new NoteTransaction();
         transaction.setNoteId(savedNote.getNoteId());
         transaction.setActionType(ActionType.CREATE_NOTE);
@@ -58,5 +56,32 @@ public class NoteService {
 
     public List<Note> getAllActiveNotes() {
         return noteRepository.findByIsActiveTrue();
+    }
+
+    @Transactional
+    public Note updateNote(Long noteId, String newContent) {
+        Note existingNote = noteRepository.findById(noteId)
+                .orElseThrow(() -> new EntityNotFoundException("Note not found with id: " + noteId));
+
+        String contentBefore = existingNote.getContent();
+        existingNote.setContent(newContent);
+
+        String newTitle = newContent.split("\n")[0];
+        existingNote.setTitle(newTitle.length() > 255 ? newTitle.substring(0, 255) : newTitle);
+        existingNote.setUpdatedAt(LocalDateTime.now());
+
+        Note updatedNote = noteRepository.save(existingNote);
+
+        NoteTransaction transaction = new NoteTransaction();
+        transaction.setNoteId(noteId);
+        transaction.setActionType(ActionType.UPDATE_NOTE);
+        transaction.setContentBefore(contentBefore);
+        transaction.setContentAfter(newContent);
+        transaction.setTimestamp(LocalDateTime.now());
+        transaction.setMetadata("Note content updated.");
+
+        noteTransactionRepository.save(transaction);
+
+        return updatedNote;
     }
 }

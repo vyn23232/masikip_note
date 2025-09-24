@@ -2,6 +2,7 @@
 package csit360.g6.team.masikip.controller;
 
 import csit360.g6.team.masikip.dto.CreateNoteRequest;
+import csit360.g6.team.masikip.dto.UpdateNoteRequest;
 import csit360.g6.team.masikip.model.Note;
 import csit360.g6.team.masikip.service.NoteService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,5 +29,11 @@ public class NoteController {
     public ResponseEntity<List<Note>> getAllNotes() {
         List<Note> notes = noteService.getAllActiveNotes();
         return ResponseEntity.ok(notes);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Note> updateNote(@PathVariable Long id, @RequestBody UpdateNoteRequest request) {
+        Note updatedNote = noteService.updateNote(id, request.getContent());
+        return ResponseEntity.ok(updatedNote);
     }
 }
