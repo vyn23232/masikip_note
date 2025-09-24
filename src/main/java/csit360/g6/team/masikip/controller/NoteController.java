@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/notes")
 public class NoteController {
@@ -20,5 +22,11 @@ public class NoteController {
     public ResponseEntity<Note> createNote(@RequestBody CreateNoteRequest request) {
         Note createdNote = noteService.createNote(request.getTitle(), request.getContent());
         return new ResponseEntity<>(createdNote, HttpStatus.CREATED);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Note>> getAllNotes() {
+        List<Note> notes = noteService.getAllActiveNotes();
+        return ResponseEntity.ok(notes);
     }
 }

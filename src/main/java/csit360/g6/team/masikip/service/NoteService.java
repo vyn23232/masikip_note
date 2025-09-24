@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class NoteService {
@@ -53,5 +54,9 @@ public class NoteService {
         noteTransactionRepository.save(transaction);
 
         return savedNote;
+    }
+
+    public List<Note> getAllActiveNotes() {
+        return noteRepository.findByIsActiveTrue();
     }
 }
