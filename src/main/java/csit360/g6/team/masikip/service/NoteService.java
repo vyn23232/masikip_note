@@ -58,6 +58,10 @@ public class NoteService {
         return noteRepository.findByIsActiveTrue();
     }
 
+    public List<Note> getAllNotes() {
+        return noteRepository.findAll();
+    }
+
     @Transactional
     public Note updateNote(Long noteId, String newContent) {
         Note existingNote = noteRepository.findById(noteId)

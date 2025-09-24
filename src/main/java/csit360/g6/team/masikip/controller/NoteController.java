@@ -23,6 +23,10 @@ public class NoteController {
     @PostMapping
     public ResponseEntity<Note> createNote(@RequestBody CreateNoteRequest request) {
         Note createdNote = noteService.createNote(request.getTitle(), request.getContent());
+        // Debug logging
+        System.out.println("Created note ID: " + createdNote.getNoteId());
+        System.out.println("Created note isActive: " + createdNote.isActive());
+        System.out.println("Created note title: " + createdNote.getTitle());
         return new ResponseEntity<>(createdNote, HttpStatus.CREATED);
     }
 
@@ -42,6 +46,16 @@ public class NoteController {
     public ResponseEntity<Void> deleteNote(@PathVariable Long id) {
         noteService.deleteNote(id);
         return ResponseEntity.noContent().build(); // Standard successful response for a DELETE request
+    }
+
+    @GetMapping("/debug")
+    public ResponseEntity<List<Note>> getAllNotesDebug() {
+        List<Note> allNotes = noteService.getAllNotes(); // We'll need to create this method
+        System.out.println("Total notes in database: " + allNotes.size());
+        for (Note note : allNotes) {
+            System.out.println("Note ID: " + note.getNoteId() + ", Active: " + note.isActive() + ", Title: " + note.getTitle());
+        }
+        return ResponseEntity.ok(allNotes);
     }
 
     @PatchMapping("/{id}/priority")
