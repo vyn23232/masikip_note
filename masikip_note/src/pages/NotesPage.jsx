@@ -50,7 +50,6 @@ import '../styles/NotesPage.css';
  * - transactionData: Note operation data
  * - signature: Digital signature for authenticity
  */
-
 function NotesPage() {
   const [notes, setNotes] = useState([]);
   
@@ -68,14 +67,13 @@ function NotesPage() {
       timestamp: Date.now(), // Unix timestamp for blockchain transaction
       isSelected: false,
       isPinned: false,
+      isDeleted: false,
       tags: [] // Optional tags for categorization
     };
 
     // TODO: Backend Integration - CREATE_NOTE Transaction
     // When backend is ready, replace local state update with API call:
     // 
-    // const transactionData = {
-    //   type: 'CREATE_NOTE',
     //   noteId: newNote.id,
     //   title: newNote.title,
     //   content: newNote.content,
@@ -119,6 +117,9 @@ function NotesPage() {
   const updateNote = (noteId, content) => {
     const updatedNotes = notes.map(note => {
       if (note.id === noteId) {
+        if (note.isDeleted) {
+          return note;
+        }
         const lines = content.split('\n');
         const title = lines[0] || 'New Note';
         
@@ -162,6 +163,36 @@ function NotesPage() {
           content,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           lastModified: Date.now() // Track modification timestamp for blockchain
+        };
+      }
+      return note;
+    });
+    setNotes(updatedNotes);
+  };
+
+  const deleteNote = (noteId) => {
+    const updatedNotes = notes.map(note => {
+      if (note.id === noteId) {
+        return {
+          ...note,
+          isDeleted: true,
+          lastModified: Date.now(),
+          deletedAt: Date.now()
+        };
+      }
+      return note;
+    });
+    setNotes(updatedNotes);
+  };
+
+  const restoreNote = (noteId) => {
+    const updatedNotes = notes.map(note => {
+      if (note.id === noteId) {
+        return {
+          ...note,
+          isDeleted: false,
+          lastModified: Date.now(),
+          deletedAt: undefined
         };
       }
       return note;
@@ -219,6 +250,8 @@ function NotesPage() {
         note={selectedNote}
         onUpdateNote={updateNote}
         onTogglePin={togglePin}
+        onDeleteNote={deleteNote}
+        onRestoreNote={restoreNote}
       />
     </div>
   );

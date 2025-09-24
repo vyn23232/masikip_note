@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import '../styles/NoteEditor.css';
 import NotesLogo from '../assets/Notes.png';
 
-function NoteEditor({ note, onUpdateNote, onTogglePin }) {
+function NoteEditor({ note, onUpdateNote, onTogglePin, onDeleteNote, onRestoreNote }) {
   const [content, setContent] = useState('');
   const [showMenu, setShowMenu] = useState(false);
   const [tagInput, setTagInput] = useState('');
@@ -33,7 +33,7 @@ function NoteEditor({ note, onUpdateNote, onTogglePin }) {
   const handleContentChange = (e) => {
     const newContent = e.target.value;
     setContent(newContent);
-    if (note) {
+    if (note && !note.isDeleted) {
       onUpdateNote(note.id, newContent);
     }
   };
@@ -81,6 +81,20 @@ function NoteEditor({ note, onUpdateNote, onTogglePin }) {
     setShowMenu(false);
   };
 
+  const handleDelete = () => {
+    if (note && onDeleteNote) {
+      onDeleteNote(note.id);
+    }
+    setShowMenu(false);
+  };
+
+  const handleRestore = () => {
+    if (note && onRestoreNote) {
+      onRestoreNote(note.id);
+    }
+    setShowMenu(false);
+  };
+
   const toggleMenu = () => {
     setShowMenu(!showMenu);
   };
@@ -110,13 +124,22 @@ function NoteEditor({ note, onUpdateNote, onTogglePin }) {
           <button className="action-btn" title="Share">
             <span>↗️</span>
           </button>
+          {!note.isDeleted ? (
+            <button className="action-btn" title="Delete note" onClick={handleDelete}>
+              <span>🗑️</span>
+            </button>
+          ) : (
+            <button className="action-btn" title="Restore note" onClick={handleRestore}>
+              <span>♻️</span>
+            </button>
+          )}
           <div className="menu-container" ref={menuRef}>
             <button className="action-btn" title="More options" onClick={toggleMenu}>
               <span>⋯</span>
             </button>
             {showMenu && (
               <div className="dropdown-menu">
-                <button className="menu-item" onClick={handleTogglePin}>
+                <button className="menu-item" onClick={handleTogglePin} disabled={note.isDeleted}>
                   {note.isPinned ? (
                     <>
                       <span className="menu-icon">📌</span>
@@ -129,11 +152,21 @@ function NoteEditor({ note, onUpdateNote, onTogglePin }) {
                     </>
                   )}
                 </button>
+                <button className="menu-item" onClick={handleDelete} disabled={note.isDeleted}>
+                  <span className="menu-icon">🗑️</span>
+                  <span>{note.isDeleted ? 'Deleted' : 'Delete note'}</span>
+                </button>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {note.isDeleted && (
+        <div className="deleted-banner" title={note.deletedAt ? new Date(note.deletedAt).toLocaleString() : ''}>
+          This note was deleted and is read-only.
+        </div>
+      )}
 
       {/* Tags Section */}
       <div className="tags-section">
@@ -171,6 +204,7 @@ function NoteEditor({ note, onUpdateNote, onTogglePin }) {
           onChange={handleContentChange}
           placeholder="Start typing your note..."
           className="note-textarea"
+          readOnly={!!note.isDeleted}
           autoFocus
         />
       </div>

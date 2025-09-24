@@ -7,12 +7,13 @@ function Sidebar({ notes, onCreateNote, onSelectNote }) {
   const [expandedSection, setExpandedSection] = useState('notes');
 
   const filteredNotes = notes.filter(note =>
-    note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    note.content.toLowerCase().includes(searchTerm.toLowerCase())
+    (note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     note.content.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const pinnedNotes = filteredNotes.filter(note => note.isPinned);
-  const regularNotes = filteredNotes.filter(note => !note.isPinned);
+  const pinnedNotes = filteredNotes.filter(note => note.isPinned && !note.isDeleted);
+  const regularNotes = filteredNotes.filter(note => !note.isPinned && !note.isDeleted);
+  const trashNotes = filteredNotes.filter(note => note.isDeleted);
 
   const toggleSection = (section) => {
     setExpandedSection(expandedSection === section ? '' : section);
@@ -111,6 +112,39 @@ function Sidebar({ notes, onCreateNote, onSelectNote }) {
                 ))
               ) : (
                 <div className="no-notes">No notes found</div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="notes-section">
+          <div className="section-header" onClick={() => toggleSection('trash')}>
+            <span className={`section-arrow ${expandedSection === 'trash' ? 'expanded' : ''}`}>
+              ▼
+            </span>
+            <span className="section-title">Trash</span>
+          </div>
+
+          {expandedSection === 'trash' && (
+            <div className="notes-list">
+              {trashNotes.length > 0 ? (
+                trashNotes.map(note => (
+                  <div
+                    key={note.id}
+                    className={`note-item ${note.isSelected ? 'selected' : ''}`}
+                    onClick={() => onSelectNote(note.id)}
+                    title={note.deletedAt ? `Deleted ${new Date(note.deletedAt).toLocaleString()}` : 'Deleted note'}
+                  >
+                    <div className="note-title">🗑️ {note.title}</div>
+                    <div className="note-meta">
+                      <span className="note-date">{note.time}</span>
+                      <span className="note-status">Deleted</span>
+                    </div>
+                    <div className="note-preview">{note.preview}</div>
+                  </div>
+                ))
+              ) : (
+                <div className="no-notes">Trash is empty</div>
               )}
             </div>
           )}
