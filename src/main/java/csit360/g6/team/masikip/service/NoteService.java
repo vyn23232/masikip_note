@@ -84,4 +84,23 @@ public class NoteService {
 
         return updatedNote;
     }
+
+    @Transactional
+    public void deleteNote(Long noteId) {
+        Note noteToDelete = noteRepository.findById(noteId)
+                .orElseThrow(() -> new EntityNotFoundException("Note not found with id: " + noteId));
+
+        noteToDelete.setActive(false);
+        noteToDelete.setUpdatedAt(LocalDateTime.now());
+        noteRepository.save(noteToDelete);
+
+        NoteTransaction transaction = new NoteTransaction();
+        transaction.setNoteId(noteId);
+        transaction.setActionType(ActionType.DELETE_NOTE);
+        transaction.setContentBefore(noteToDelete.getContent());
+        transaction.setContentAfter(null);
+        transaction.setTimestamp(LocalDateTime.now());
+        transaction.setMetadata("Note marked as deleted.");
+        noteTransactionRepository.save(transaction);
+    }
 }
