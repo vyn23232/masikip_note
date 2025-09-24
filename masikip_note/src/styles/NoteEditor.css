@@ -59,6 +59,60 @@
   color: #8e8e93;
 }
 
+/* Priority Selector Styles */
+.priority-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.priority-label {
+  font-size: 14px;
+  color: #8e8e93;
+  font-weight: 500;
+}
+
+.priority-dropdown {
+  background-color: #3a3a3c;
+  border: 1px solid #48484a;
+  border-radius: 6px;
+  color: #ffffff;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.priority-dropdown:hover {
+  border-color: #5a5a5c;
+}
+
+.priority-dropdown:focus {
+  border-color: #007aff;
+}
+
+.priority-dropdown:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Priority-specific styling */
+.priority-high {
+  border-color: #ff3b30 !important;
+  background-color: rgba(255, 59, 48, 0.1);
+}
+
+.priority-medium {
+  border-color: #ff9500 !important;
+  background-color: rgba(255, 149, 0, 0.1);
+}
+
+.priority-low {
+  border-color: #30d158 !important;
+  background-color: rgba(48, 209, 88, 0.1);
+}
+
 .note-date {
   font-weight: 500;
 }

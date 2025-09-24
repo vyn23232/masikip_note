@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import NoteEditor from '../components/NoteEditor';
+import noteService from '../services/noteService';
 import '../styles/NotesPage.css';
 
 /**
@@ -52,57 +53,81 @@ import '../styles/NotesPage.css';
  */
 function NotesPage() {
   const [notes, setNotes] = useState([]);
-  
+  const [loading, setLoading] = useState(false);
   const [selectedNoteId, setSelectedNoteId] = useState(null);
 
-  const createNewNote = () => {
-    // Generate unique note with blockchain-ready structure
-    const newNote = {
-      id: `note-${Date.now()}`, // Will be used as transaction ID in blockchain
-      title: 'New Note',
-      preview: '',
-      content: '',
-      date: new Date().toLocaleDateString(),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      timestamp: Date.now(), // Unix timestamp for blockchain transaction
-      isSelected: false,
-      isPinned: false,
-      isDeleted: false,
-      tags: [] // Optional tags for categorization
-    };
+  // Load notes from backend on component mount
+  useEffect(() => {
+    loadNotes();
+  }, []);
 
-    // TODO: Backend Integration - CREATE_NOTE Transaction
-    // When backend is ready, replace local state update with API call:
-    // 
-    //   noteId: newNote.id,
-    //   title: newNote.title,
-    //   content: newNote.content,
-    //   tags: newNote.tags,
-    //   timestamp: newNote.timestamp,
-    //   metadata: {
-    //     isPinned: newNote.isPinned,
-    //     createdAt: newNote.timestamp,
-    //     lastModified: newNote.timestamp
-    //   }
-    // };
-    // 
-    // try {
-    //   const response = await fetch('/api/notes/create', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(transactionData)
-    //   });
-    //   const blockchainResponse = await response.json();
-    //   // blockchainResponse should contain: blockHash, transactionId, timestamp
-    // } catch (error) {
-    //   console.error('Failed to create note transaction:', error);
-    // }
+  const loadNotes = async () => {
+    try {
+      setLoading(true);
+      console.log('Attempting to load notes from backend...');
+      const backendNotes = await noteService.getAllNotes();
+      console.log('Backend notes loaded:', backendNotes);
+      
+      if (Array.isArray(backendNotes)) {
+        const transformedNotes = backendNotes.map(note => noteService.transformNote(note));
+        console.log('Transformed notes:', transformedNotes);
+        setNotes(transformedNotes);
+      } else {
+        console.warn('Backend did not return an array of notes:', backendNotes);
+        setNotes([]);
+      }
+    } catch (error) {
+      console.error('Failed to load notes:', error);
+      // Fallback to empty array if backend is unavailable
+      setNotes([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // Frontend-only implementation (current)
-    const updatedNotes = notes.map(note => ({ ...note, isSelected: false }));
-    updatedNotes.unshift({ ...newNote, isSelected: true });
-    setNotes(updatedNotes);
-    setSelectedNoteId(newNote.id);
+  const createNewNote = async () => {
+    try {
+      setLoading(true);
+      console.log('Creating new note...');
+      
+      // Create note via backend API
+      const backendNote = await noteService.createNote('New Note', '');
+      console.log('Backend note created:', backendNote);
+      const newNote = noteService.transformNote(backendNote);
+      console.log('Transformed note:', newNote);
+      
+      // Update local state
+      const updatedNotes = notes.map(note => ({ ...note, isSelected: false }));
+      updatedNotes.unshift({ ...newNote, isSelected: true });
+      setNotes(updatedNotes);
+      setSelectedNoteId(newNote.id);
+      
+    } catch (error) {
+      console.error('Failed to create note:', error);
+      
+      // Fallback to local-only note creation if backend is unavailable
+      const fallbackNote = {
+        id: `local-${Date.now()}`,
+        title: 'New Note',
+        preview: '',
+        content: '',
+        date: new Date().toLocaleDateString(),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: Date.now(),
+        isSelected: true,
+        isPinned: false,
+        priority: 'Medium',
+        isDeleted: false,
+        tags: []
+      };
+      
+      const updatedNotes = notes.map(note => ({ ...note, isSelected: false }));
+      updatedNotes.unshift(fallbackNote);
+      setNotes(updatedNotes);
+      setSelectedNoteId(fallbackNote.id);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const selectNote = (noteId) => {
@@ -114,60 +139,70 @@ function NotesPage() {
     setSelectedNoteId(noteId);
   };
 
-  const updateNote = (noteId, content) => {
-    const updatedNotes = notes.map(note => {
-      if (note.id === noteId) {
-        if (note.isDeleted) {
-          return note;
-        }
-        const lines = content.split('\n');
-        const title = lines[0] || 'New Note';
-        
-        // Generate preview from content excluding the first line (title)
-        const contentWithoutTitle = lines.slice(1).join('\n').trim();
-        const preview = contentWithoutTitle.slice(0, 100) + (contentWithoutTitle.length > 100 ? '...' : '');
-        
-        // TODO: Backend Integration - UPDATE_NOTE Transaction
-        // When backend is ready, replace local state update with API call:
-        // 
-        // const transactionData = {
-        //   type: 'UPDATE_NOTE',
-        //   noteId: noteId,
-        //   title: title,
-        //   content: content,
-        //   lastModified: Date.now(),
-        //   previousHash: note.blockHash, // Reference to previous version
-        //   metadata: {
-        //     wordCount: content.split(' ').length,
-        //     characterCount: content.length,
-        //     lastEditTime: new Date().toISOString()
-        //   }
-        // };
-        // 
-        // try {
-        //   const response = await fetch(`/api/notes/${noteId}/update`, {
-        //     method: 'PUT',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify(transactionData)
-        //   });
-        //   const blockchainResponse = await response.json();
-        //   // Creates new block linking to previous version
-        // } catch (error) {
-        //   console.error('Failed to update note transaction:', error);
-        // }
-        
-        return {
-          ...note,
-          title: title.toUpperCase(),
-          preview,
-          content,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          lastModified: Date.now() // Track modification timestamp for blockchain
-        };
+  const updateNote = async (noteId, content) => {
+    try {
+      console.log('Updating note:', { noteId, contentLength: content.length });
+      
+      // Don't update deleted notes
+      const currentNote = notes.find(note => note.id === noteId);
+      if (!currentNote || currentNote.isDeleted) {
+        console.log('Note not found or deleted, skipping update');
+        return;
       }
-      return note;
-    });
-    setNotes(updatedNotes);
+
+      console.log('Current note:', currentNote);
+
+      // Update via backend API if not a local note
+      if (!String(noteId).startsWith('local-')) {
+        console.log('Updating note in backend...');
+        await noteService.updateNote(noteId, content);
+        console.log('Backend update successful');
+      } else {
+        console.log('Skipping backend update for local note');
+      }
+      
+      // Update local state immediately for better UX
+      const updatedNotes = notes.map(note => {
+        if (note.id === noteId) {
+          const lines = content.split('\n');
+          const title = lines[0] || 'New Note';
+          const preview = noteService.generatePreview(content);
+          
+          return {
+            ...note,
+            title: title.toUpperCase(),
+            preview,
+            content,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            lastModified: Date.now()
+          };
+        }
+        return note;
+      });
+      setNotes(updatedNotes);
+      
+    } catch (error) {
+      console.error('Failed to update note:', error);
+      // Still update local state even if backend fails
+      const updatedNotes = notes.map(note => {
+        if (note.id === noteId) {
+          const lines = content.split('\n');
+          const title = lines[0] || 'New Note';
+          const preview = noteService.generatePreview(content);
+          
+          return {
+            ...note,
+            title: title.toUpperCase(),
+            preview,
+            content,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            lastModified: Date.now()
+          };
+        }
+        return note;
+      });
+      setNotes(updatedNotes);
+    }
   };
 
   const deleteNote = (noteId) => {
@@ -200,41 +235,93 @@ function NotesPage() {
     setNotes(updatedNotes);
   };
 
-  const togglePin = (noteId) => {
-    const updatedNotes = notes.map(note => {
-      if (note.id === noteId) {
-        // TODO: Backend Integration - SET_PRIORITY Transaction
-        // When backend is ready, replace local state update with API call:
-        // 
-        // const transactionData = {
-        //   type: 'SET_PRIORITY',
-        //   noteId: noteId,
-        //   isPinned: !note.isPinned,
-        //   priorityLevel: !note.isPinned ? 'HIGH' : 'NORMAL',
-        //   timestamp: Date.now(),
-        //   previousHash: note.blockHash
-        // };
-        // 
-        // try {
-        //   const response = await fetch(`/api/notes/${noteId}/priority`, {
-        //     method: 'PATCH',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify(transactionData)
-        //   });
-        //   const blockchainResponse = await response.json();
-        // } catch (error) {
-        //   console.error('Failed to update priority transaction:', error);
-        // }
-        
-        return {
-          ...note,
-          isPinned: !note.isPinned,
-          lastModified: Date.now()
-        };
+  const togglePin = async (noteId) => {
+    try {
+      const currentNote = notes.find(note => note.id === noteId);
+      if (!currentNote || currentNote.isDeleted) return;
+
+      const newIsPinned = !currentNote.isPinned;
+
+      // Update via backend API if not a local note
+      if (!String(noteId).startsWith('local-')) {
+        await noteService.updateNotePriority(noteId, newIsPinned);
       }
-      return note;
-    });
-    setNotes(updatedNotes);
+
+      // Update local state
+      const updatedNotes = notes.map(note => {
+        if (note.id === noteId) {
+          return {
+            ...note,
+            isPinned: newIsPinned,
+            priority: noteService.pinnedToPriority(newIsPinned),
+            lastModified: Date.now()
+          };
+        }
+        return note;
+      });
+      setNotes(updatedNotes);
+
+    } catch (error) {
+      console.error('Failed to update pin status:', error);
+      // Still update local state even if backend fails
+      const updatedNotes = notes.map(note => {
+        if (note.id === noteId) {
+          const newIsPinned = !note.isPinned;
+          return {
+            ...note,
+            isPinned: newIsPinned,
+            priority: noteService.pinnedToPriority(newIsPinned),
+            lastModified: Date.now()
+          };
+        }
+        return note;
+      });
+      setNotes(updatedNotes);
+    }
+  };
+
+  const setPriority = async (noteId, newPriority) => {
+    try {
+      const currentNote = notes.find(note => note.id === noteId);
+      if (!currentNote || currentNote.isDeleted) return;
+
+      const newIsPinned = noteService.priorityToPinned(newPriority);
+
+      // Update via backend API if not a local note
+      if (!String(noteId).startsWith('local-')) {
+        await noteService.updateNotePriority(noteId, newIsPinned);
+      }
+
+      // Update local state
+      const updatedNotes = notes.map(note => {
+        if (note.id === noteId) {
+          return {
+            ...note,
+            priority: newPriority,
+            isPinned: newIsPinned,
+            lastModified: Date.now()
+          };
+        }
+        return note;
+      });
+      setNotes(updatedNotes);
+
+    } catch (error) {
+      console.error('Failed to update priority:', error);
+      // Still update local state even if backend fails
+      const updatedNotes = notes.map(note => {
+        if (note.id === noteId) {
+          return {
+            ...note,
+            priority: newPriority,
+            isPinned: noteService.priorityToPinned(newPriority),
+            lastModified: Date.now()
+          };
+        }
+        return note;
+      });
+      setNotes(updatedNotes);
+    }
   };
 
   const selectedNote = notes.find(note => note.id === selectedNoteId);
@@ -243,6 +330,7 @@ function NotesPage() {
     <div className="notes-app">
       <Sidebar 
         notes={notes}
+        loading={loading}
         onCreateNote={createNewNote}
         onSelectNote={selectNote}
       />
@@ -250,6 +338,7 @@ function NotesPage() {
         note={selectedNote}
         onUpdateNote={updateNote}
         onTogglePin={togglePin}
+        onSetPriority={setPriority}
         onDeleteNote={deleteNote}
         onRestoreNote={restoreNote}
       />

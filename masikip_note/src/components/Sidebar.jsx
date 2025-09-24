@@ -2,9 +2,19 @@ import { useState } from 'react';
 import '../styles/Sidebar.css';
 import NotesLogo from '../assets/Notes.png';
 
-function Sidebar({ notes, onCreateNote, onSelectNote }) {
+function Sidebar({ notes, loading, onCreateNote, onSelectNote }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedSection, setExpandedSection] = useState('notes');
+
+  // Helper function to get priority emoji
+  const getPriorityIcon = (priority) => {
+    switch (priority) {
+      case 'High': return '🔴';
+      case 'Medium': return '🟡';
+      case 'Low': return '🟢';
+      default: return '🟡';
+    }
+  };
 
   const filteredNotes = notes.filter(note =>
     (note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -53,7 +63,13 @@ function Sidebar({ notes, onCreateNote, onSelectNote }) {
       </div>
 
       <div className="sidebar-content">
-        <div className="notes-section">
+        {loading ? (
+          <div className="loading-notes">
+            <div className="loading-spinner">Loading notes...</div>
+          </div>
+        ) : (
+          <>
+            <div className="notes-section">
           <div className="section-header" onClick={() => toggleSection('pinned')}>
             <span className={`section-arrow ${expandedSection === 'pinned' ? 'expanded' : ''}`}>
               ▼
@@ -70,10 +86,13 @@ function Sidebar({ notes, onCreateNote, onSelectNote }) {
                     className={`note-item ${note.isSelected ? 'selected' : ''}`}
                     onClick={() => onSelectNote(note.id)}
                   >
-                    <div className="note-title">📌 {note.title}</div>
+                    <div className="note-title">
+                      📌 {getPriorityIcon(note.priority)} {note.title}
+                    </div>
                     <div className="note-meta">
                       <span className="note-date">{note.time}</span>
                       <span className="note-status">📄 Notes</span>
+                      <span className="note-priority">Priority: {note.priority || 'Medium'}</span>
                     </div>
                     <div className="note-preview">{note.preview}</div>
                   </div>
@@ -102,10 +121,13 @@ function Sidebar({ notes, onCreateNote, onSelectNote }) {
                     className={`note-item ${note.isSelected ? 'selected' : ''}`}
                     onClick={() => onSelectNote(note.id)}
                   >
-                    <div className="note-title">{note.title}</div>
+                    <div className="note-title">
+                      {getPriorityIcon(note.priority)} {note.title}
+                    </div>
                     <div className="note-meta">
                       <span className="note-date">{note.time}</span>
                       <span className="note-status">📄 Notes</span>
+                      <span className="note-priority">Priority: {note.priority || 'Medium'}</span>
                     </div>
                     <div className="note-preview">{note.preview}</div>
                   </div>
@@ -135,10 +157,13 @@ function Sidebar({ notes, onCreateNote, onSelectNote }) {
                     onClick={() => onSelectNote(note.id)}
                     title={note.deletedAt ? `Deleted ${new Date(note.deletedAt).toLocaleString()}` : 'Deleted note'}
                   >
-                    <div className="note-title">🗑️ {note.title}</div>
+                    <div className="note-title">
+                      🗑️ {getPriorityIcon(note.priority)} {note.title}
+                    </div>
                     <div className="note-meta">
                       <span className="note-date">{note.time}</span>
                       <span className="note-status">Deleted</span>
+                      <span className="note-priority">Priority: {note.priority || 'Medium'}</span>
                     </div>
                     <div className="note-preview">{note.preview}</div>
                   </div>
@@ -149,6 +174,8 @@ function Sidebar({ notes, onCreateNote, onSelectNote }) {
             </div>
           )}
         </div>
+          </>
+        )}
       </div>
 
       <div className="sidebar-footer">

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import '../styles/NoteEditor.css';
 import NotesLogo from '../assets/Notes.png';
 
-function NoteEditor({ note, onUpdateNote, onTogglePin, onDeleteNote, onRestoreNote }) {
+function NoteEditor({ note, onUpdateNote, onTogglePin, onSetPriority, onDeleteNote, onRestoreNote }) {
   const [content, setContent] = useState('');
   const [showMenu, setShowMenu] = useState(false);
   const [tagInput, setTagInput] = useState('');
@@ -95,6 +95,12 @@ function NoteEditor({ note, onUpdateNote, onTogglePin, onDeleteNote, onRestoreNo
     setShowMenu(false);
   };
 
+  const handlePriorityChange = (newPriority) => {
+    if (note && onSetPriority && !note.isDeleted) {
+      onSetPriority(note.id, newPriority);
+    }
+  };
+
   const toggleMenu = () => {
     setShowMenu(!showMenu);
   };
@@ -119,6 +125,20 @@ function NoteEditor({ note, onUpdateNote, onTogglePin, onDeleteNote, onRestoreNo
         <div className="note-info">
           <span className="note-date">{note.date}</span>
           <span className="note-time">{note.time}</span>
+        </div>
+        <div className="priority-selector">
+          <label htmlFor="priority-select" className="priority-label">Priority:</label>
+          <select 
+            id="priority-select"
+            value={note.priority || 'Medium'} 
+            onChange={(e) => handlePriorityChange(e.target.value)}
+            className={`priority-dropdown priority-${(note.priority || 'Medium').toLowerCase()}`}
+            disabled={note.isDeleted}
+          >
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
         </div>
         <div className="note-actions">
           <button className="action-btn" title="Share">

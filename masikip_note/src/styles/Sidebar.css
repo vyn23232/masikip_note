@@ -104,6 +104,29 @@
   padding: 16px 0;
 }
 
+/* Loading state styles */
+.loading-notes {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  color: #8e8e93;
+}
+
+.loading-spinner {
+  font-size: 14px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 .notes-section {
   margin-bottom: 24px;
 }
@@ -180,10 +203,31 @@
   margin-bottom: 4px;
   font-size: 12px;
   color: #8e8e93;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .note-item.selected .note-meta {
   color: rgba(255, 255, 255, 0.8);
+}
+
+/* Priority indicator styling */
+.note-priority {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.note-item .note-priority {
+  background-color: rgba(142, 142, 147, 0.2);
+  color: #8e8e93;
+}
+
+.note-item.selected .note-priority {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .note-preview {
@@ -232,4 +276,15 @@
 .folder-btn:hover {
   background-color: #3a3a3c;
   color: #ffffff;
+}
+
+/* Loading state */
+.loading-notes {
+  padding: 24px 16px;
+  text-align: center;
+  color: #8e8e93;
+}
+
+.loading-spinner {
+  font-size: 14px;
 }
