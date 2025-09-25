@@ -2,22 +2,32 @@ import { useState } from 'react';
 import '../styles/Sidebar.css';
 import NotesLogo from '../assets/Notes.png';
 
-function Sidebar({ notes, onCreateNote, onSelectNote }) {
+function Sidebar({ notes, onCreateNote, onSelectNote, selectedNoteId }) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [expandedSection, setExpandedSection] = useState('notes');
+  
+  // FIX 1: State to manage which sections are open independently.
+  const [sections, setSections] = useState({
+    pinned: true,
+    notes: true,
+  });
 
-  const filteredNotes = notes.filter(note =>
-    (note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     note.content.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  const pinnedNotes = filteredNotes.filter(note => note.isPinned && !note.isDeleted);
-  const regularNotes = filteredNotes.filter(note => !note.isPinned && !note.isDeleted);
-  const trashNotes = filteredNotes.filter(note => note.isDeleted);
-
-  const toggleSection = (section) => {
-    setExpandedSection(expandedSection === section ? '' : section);
+  // FIX 2: New function to toggle individual sections without closing others.
+  const toggleSection = (sectionName) => {
+    setSections(prevSections => ({
+      ...prevSections,
+      [sectionName]: !prevSections[sectionName],
+    }));
   };
+
+  const filteredNotes = notes.filter(note => {
+    const title = (note.title || '').toLowerCase();
+    const content = (note.content || '').toLowerCase();
+    return title.includes(searchTerm.toLowerCase()) || content.includes(searchTerm.toLowerCase());
+  });
+
+  // FIX 3: Ensure we are filtering based on the 'priority' field from the backend.
+  const pinnedNotes = filteredNotes.filter(note => note.priority === 'High');
+  const regularNotes = filteredNotes.filter(note => note.priority !== 'High');
 
   return (
     <div className="sidebar">
@@ -27,13 +37,7 @@ function Sidebar({ notes, onCreateNote, onSelectNote }) {
           <span>Masikip Notes</span>
         </div>
         <div className="sidebar-actions">
-          <button className="action-btn" title="Sort">
-            <span>⇅</span>
-          </button>
-          <button className="action-btn" title="View options">
-            <span>☰</span>
-          </button>
-          <button className="action-btn new-note-btn" onClick={onCreateNote} title="New Note">
+           <button className="action-btn new-note-btn" onClick={onCreateNote} title="New Note">
             <span>📝</span>
           </button>
         </div>
@@ -53,29 +57,23 @@ function Sidebar({ notes, onCreateNote, onSelectNote }) {
       </div>
 
       <div className="sidebar-content">
+        {/* Pinned Notes Section */}
         <div className="notes-section">
           <div className="section-header" onClick={() => toggleSection('pinned')}>
-            <span className={`section-arrow ${expandedSection === 'pinned' ? 'expanded' : ''}`}>
-              ▼
-            </span>
+            <span className={`section-arrow ${sections.pinned ? 'expanded' : ''}`}>▼</span>
             <span className="section-title">Pinned</span>
           </div>
-          
-          {expandedSection === 'pinned' && (
+          {sections.pinned && (
             <div className="notes-list">
               {pinnedNotes.length > 0 ? (
                 pinnedNotes.map(note => (
                   <div
-                    key={note.id}
-                    className={`note-item ${note.isSelected ? 'selected' : ''}`}
-                    onClick={() => onSelectNote(note.id)}
+                    key={note.noteId}
+                    className={`note-item ${selectedNoteId === note.noteId ? 'selected' : ''}`}
+                    onClick={() => onSelectNote(note.noteId)}
                   >
                     <div className="note-title">📌 {note.title}</div>
-                    <div className="note-meta">
-                      <span className="note-date">{note.time}</span>
-                      <span className="note-status">📄 Notes</span>
-                    </div>
-                    <div className="note-preview">{note.preview}</div>
+                    <div className="note-preview">{note.content ? note.content.substring(0, 100) : 'No content'}</div>
                   </div>
                 ))
               ) : (
@@ -85,29 +83,23 @@ function Sidebar({ notes, onCreateNote, onSelectNote }) {
           )}
         </div>
 
+        {/* Regular Notes Section */}
         <div className="notes-section">
           <div className="section-header" onClick={() => toggleSection('notes')}>
-            <span className={`section-arrow ${expandedSection === 'notes' ? 'expanded' : ''}`}>
-              ▼
-            </span>
+            <span className={`section-arrow ${sections.notes ? 'expanded' : ''}`}>▼</span>
             <span className="section-title">Notes</span>
           </div>
-          
-          {expandedSection === 'notes' && (
+          {sections.notes && (
             <div className="notes-list">
               {regularNotes.length > 0 ? (
                 regularNotes.map(note => (
                   <div
-                    key={note.id}
-                    className={`note-item ${note.isSelected ? 'selected' : ''}`}
-                    onClick={() => onSelectNote(note.id)}
+                    key={note.noteId}
+                    className={`note-item ${selectedNoteId === note.noteId ? 'selected' : ''}`}
+                    onClick={() => onSelectNote(note.noteId)}
                   >
                     <div className="note-title">{note.title}</div>
-                    <div className="note-meta">
-                      <span className="note-date">{note.time}</span>
-                      <span className="note-status">📄 Notes</span>
-                    </div>
-                    <div className="note-preview">{note.preview}</div>
+                    <div className="note-preview">{note.content ? note.content.substring(0, 100) : ''}</div>
                   </div>
                 ))
               ) : (
@@ -116,45 +108,6 @@ function Sidebar({ notes, onCreateNote, onSelectNote }) {
             </div>
           )}
         </div>
-
-        <div className="notes-section">
-          <div className="section-header" onClick={() => toggleSection('trash')}>
-            <span className={`section-arrow ${expandedSection === 'trash' ? 'expanded' : ''}`}>
-              ▼
-            </span>
-            <span className="section-title">Trash</span>
-          </div>
-
-          {expandedSection === 'trash' && (
-            <div className="notes-list">
-              {trashNotes.length > 0 ? (
-                trashNotes.map(note => (
-                  <div
-                    key={note.id}
-                    className={`note-item ${note.isSelected ? 'selected' : ''}`}
-                    onClick={() => onSelectNote(note.id)}
-                    title={note.deletedAt ? `Deleted ${new Date(note.deletedAt).toLocaleString()}` : 'Deleted note'}
-                  >
-                    <div className="note-title">🗑️ {note.title}</div>
-                    <div className="note-meta">
-                      <span className="note-date">{note.time}</span>
-                      <span className="note-status">Deleted</span>
-                    </div>
-                    <div className="note-preview">{note.preview}</div>
-                  </div>
-                ))
-              ) : (
-                <div className="no-notes">Trash is empty</div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="sidebar-footer">
-        <button className="folder-btn" title="New Folder">
-          📁 New Folder
-        </button>
       </div>
     </div>
   );

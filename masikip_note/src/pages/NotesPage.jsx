@@ -1,243 +1,117 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import NoteEditor from '../components/NoteEditor';
 import '../styles/NotesPage.css';
 
-/**
- * BLOCKCHAIN INTEGRATION ROADMAP
- * ==============================
- * 
- * This component implements the frontend for a blockchain-based notes application.
- * Each note operation will be recorded as a transaction block in the chain.
- * 
- * TRANSACTION TYPES:
- * 
- * 1. CREATE_NOTE - Creates new note transaction block
- *    - noteId: Unique identifier
- *    - title: First line of content
- *    - content: Full note content
- *    - tags: Array of optional tags
- *    - timestamp: Unix timestamp
- *    - metadata: { isPinned, createdAt, lastModified }
- * 
- * 2. UPDATE_NOTE - Updates existing note (creates new block, links to previous)
- *    - noteId: Reference to original note
- *    - title, content: Updated values
- *    - lastModified: Timestamp of edit
- *    - previousHash: Hash of previous version for chain integrity
- * 
- * 3. SET_PRIORITY - Changes note priority/pinning status
- *    - noteId: Note identifier
- *    - isPinned: Boolean priority status
- *    - priorityLevel: 'HIGH' | 'NORMAL'
- * 
- * 4. STYLE_NOTE - Future: Text formatting/styling changes
- * 5. DELETE_NOTE - Future: Note deletion (tombstone transaction)
- * 6. AUTO_SAVE - Future: Automatic save transactions
- * 
- * BACKEND API ENDPOINTS (To be implemented):
- * - POST /api/notes/create - Create note transaction
- * - PUT /api/notes/{id}/update - Update note transaction  
- * - PATCH /api/notes/{id}/priority - Priority change transaction
- * - GET /api/notes - Fetch all notes from blockchain
- * - GET /api/notes/{id}/history - Get note version history
- * 
- * BLOCKCHAIN STRUCTURE:
- * Each transaction will contain:
- * - blockHash: SHA-256 hash of block content
- * - previousHash: Hash of previous block (for chain integrity)
- * - timestamp: Block creation time
- * - transactionData: Note operation data
- * - signature: Digital signature for authenticity
- */
+// The Vite proxy will handle redirecting this to http://localhost:8080
+const API_BASE_URL = '/api/notes';
+
 function NotesPage() {
   const [notes, setNotes] = useState([]);
-  
   const [selectedNoteId, setSelectedNoteId] = useState(null);
 
-  const createNewNote = () => {
-    // Generate unique note with blockchain-ready structure
-    const newNote = {
-      id: `note-${Date.now()}`, // Will be used as transaction ID in blockchain
-      title: 'New Note',
-      preview: '',
-      content: '',
-      date: new Date().toLocaleDateString(),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      timestamp: Date.now(), // Unix timestamp for blockchain transaction
-      isSelected: false,
-      isPinned: false,
-      isDeleted: false,
-      tags: [] // Optional tags for categorization
+  // 1. Fetch all notes from the backend when the component first loads
+  useEffect(() => {
+    const fetchNotes = async () => {
+      try {
+        const response = await fetch(API_BASE_URL);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setNotes(data);
+      } catch (error) {
+        console.error('Failed to fetch notes:', error);
+      }
     };
+    fetchNotes();
+  }, []); // The empty array [] means this effect runs only once on mount
 
-    // TODO: Backend Integration - CREATE_NOTE Transaction
-    // When backend is ready, replace local state update with API call:
-    // 
-    //   noteId: newNote.id,
-    //   title: newNote.title,
-    //   content: newNote.content,
-    //   tags: newNote.tags,
-    //   timestamp: newNote.timestamp,
-    //   metadata: {
-    //     isPinned: newNote.isPinned,
-    //     createdAt: newNote.timestamp,
-    //     lastModified: newNote.timestamp
-    //   }
-    // };
-    // 
-    // try {
-    //   const response = await fetch('/api/notes/create', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(transactionData)
-    //   });
-    //   const blockchainResponse = await response.json();
-    //   // blockchainResponse should contain: blockHash, transactionId, timestamp
-    // } catch (error) {
-    //   console.error('Failed to create note transaction:', error);
-    // }
+  // 2. CREATE a new note
+  const createNewNote = async () => {
+    try {
+      const response = await fetch(API_BASE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'New Note', content: '' }),
+      });
+      const newNoteFromServer = await response.json();
 
-    // Frontend-only implementation (current)
-    const updatedNotes = notes.map(note => ({ ...note, isSelected: false }));
-    updatedNotes.unshift({ ...newNote, isSelected: true });
-    setNotes(updatedNotes);
-    setSelectedNoteId(newNote.id);
+      setNotes(prevNotes => [newNoteFromServer, ...prevNotes]);
+      setSelectedNoteId(newNoteFromServer.noteId); // Use noteId from backend
+    } catch (error) {
+      console.error('Failed to create note:', error);
+    }
   };
 
   const selectNote = (noteId) => {
-    const updatedNotes = notes.map(note => ({
-      ...note,
-      isSelected: note.id === noteId
-    }));
-    setNotes(updatedNotes);
     setSelectedNoteId(noteId);
   };
 
-  const updateNote = (noteId, content) => {
-    const updatedNotes = notes.map(note => {
-      if (note.id === noteId) {
-        if (note.isDeleted) {
-          return note;
-        }
-        const lines = content.split('\n');
-        const title = lines[0] || 'New Note';
-        
-        // Generate preview from content excluding the first line (title)
-        const contentWithoutTitle = lines.slice(1).join('\n').trim();
-        const preview = contentWithoutTitle.slice(0, 100) + (contentWithoutTitle.length > 100 ? '...' : '');
-        
-        // TODO: Backend Integration - UPDATE_NOTE Transaction
-        // When backend is ready, replace local state update with API call:
-        // 
-        // const transactionData = {
-        //   type: 'UPDATE_NOTE',
-        //   noteId: noteId,
-        //   title: title,
-        //   content: content,
-        //   lastModified: Date.now(),
-        //   previousHash: note.blockHash, // Reference to previous version
-        //   metadata: {
-        //     wordCount: content.split(' ').length,
-        //     characterCount: content.length,
-        //     lastEditTime: new Date().toISOString()
-        //   }
-        // };
-        // 
-        // try {
-        //   const response = await fetch(`/api/notes/${noteId}/update`, {
-        //     method: 'PUT',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify(transactionData)
-        //   });
-        //   const blockchainResponse = await response.json();
-        //   // Creates new block linking to previous version
-        // } catch (error) {
-        //   console.error('Failed to update note transaction:', error);
-        // }
-        
-        return {
-          ...note,
-          title: title.toUpperCase(),
-          preview,
-          content,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          lastModified: Date.now() // Track modification timestamp for blockchain
-        };
+  // 3. UPDATE a note
+  const updateNote = async (noteId, content) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/${noteId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: content }), // Backend expects only content
+      });
+      const updatedNoteFromServer = await response.json();
+
+      setNotes(prevNotes =>
+        prevNotes.map(note =>
+          note.noteId === noteId ? updatedNoteFromServer : note // Use noteId
+        )
+      );
+    } catch (error) {
+      console.error('Failed to update note:', error);
+    }
+  };
+  
+  // 4. DELETE a note
+  const deleteNote = async (noteId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/${noteId}`, { 
+        method: 'DELETE' 
+      });
+
+      if (response.ok) {
+        // Remove the note from the local state to update the UI
+        setNotes(prevNotes => prevNotes.filter(note => note.noteId !== noteId));
+        setSelectedNoteId(null);
       }
-      return note;
-    });
-    setNotes(updatedNotes);
+    } catch (error) {
+      console.error('Failed to delete note:', error);
+    }
   };
 
-  const deleteNote = (noteId) => {
-    const updatedNotes = notes.map(note => {
-      if (note.id === noteId) {
-        return {
-          ...note,
-          isDeleted: true,
-          lastModified: Date.now(),
-          deletedAt: Date.now()
-        };
-      }
-      return note;
-    });
-    setNotes(updatedNotes);
+  // 5. PIN a note
+  const togglePin = async (noteId) => {
+    const noteToToggle = notes.find(n => n.noteId === noteId);
+    if (!noteToToggle) return;
+    
+    const isCurrentlyPinned = noteToToggle.priority === 'High';
+    const newPinStatus = !isCurrentlyPinned;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/${noteId}/priority`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPinned: newPinStatus }),
+      });
+      const updatedNoteFromServer = await response.json();
+
+      setNotes(prevNotes =>
+        prevNotes.map(note =>
+          note.noteId === noteId ? updatedNoteFromServer : note
+        )
+      );
+    } catch (error) {
+      console.error('Failed to toggle pin:', error);
+    }
   };
 
-  const restoreNote = (noteId) => {
-    const updatedNotes = notes.map(note => {
-      if (note.id === noteId) {
-        return {
-          ...note,
-          isDeleted: false,
-          lastModified: Date.now(),
-          deletedAt: undefined
-        };
-      }
-      return note;
-    });
-    setNotes(updatedNotes);
-  };
-
-  const togglePin = (noteId) => {
-    const updatedNotes = notes.map(note => {
-      if (note.id === noteId) {
-        // TODO: Backend Integration - SET_PRIORITY Transaction
-        // When backend is ready, replace local state update with API call:
-        // 
-        // const transactionData = {
-        //   type: 'SET_PRIORITY',
-        //   noteId: noteId,
-        //   isPinned: !note.isPinned,
-        //   priorityLevel: !note.isPinned ? 'HIGH' : 'NORMAL',
-        //   timestamp: Date.now(),
-        //   previousHash: note.blockHash
-        // };
-        // 
-        // try {
-        //   const response = await fetch(`/api/notes/${noteId}/priority`, {
-        //     method: 'PATCH',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify(transactionData)
-        //   });
-        //   const blockchainResponse = await response.json();
-        // } catch (error) {
-        //   console.error('Failed to update priority transaction:', error);
-        // }
-        
-        return {
-          ...note,
-          isPinned: !note.isPinned,
-          lastModified: Date.now()
-        };
-      }
-      return note;
-    });
-    setNotes(updatedNotes);
-  };
-
-  const selectedNote = notes.find(note => note.id === selectedNoteId);
+  const selectedNote = notes.find(note => note.noteId === selectedNoteId);
 
   return (
     <div className="notes-app">
@@ -245,13 +119,13 @@ function NotesPage() {
         notes={notes}
         onCreateNote={createNewNote}
         onSelectNote={selectNote}
+        selectedNoteId={selectedNoteId}
       />
       <NoteEditor 
         note={selectedNote}
         onUpdateNote={updateNote}
         onTogglePin={togglePin}
         onDeleteNote={deleteNote}
-        onRestoreNote={restoreNote}
       />
     </div>
   );
