@@ -1,13 +1,17 @@
 package csit360.g6.team.masikip.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class UpdateNotePriorityRequest {
-    private boolean isPinned;
+
+    @JsonProperty("isPinned")
+    private boolean pinned;
 
     public boolean isPinned() {
-        return isPinned;
+        return pinned;
     }
 
     public void setPinned(boolean pinned) {
-        isPinned = pinned;
+        this.pinned = pinned;
     }
 }
